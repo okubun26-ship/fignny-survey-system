@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}社内アンケートシステム{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+{% if session.user_id %}
+<header class="header">
+  <div class="header-inner">
+    <a href="{{ url_for('home') }}" class="header-logo" style="text-decoration:none;color:#fff;">社内アンケートシステム</a>
+    <nav class="header-nav">
+      <span class="header-user">{{ session.display_name }}（{{ '管理者' if session.role == 'admin' else '一般ユーザー' }}）</span>
+      {% if session.role == 'admin' %}
+      <a href="{{ url_for('user_manage') }}">ユーザー管理</a>
+      {% endif %}
+      <a href="{{ url_for('logout') }}">ログアウト</a>
+    </nav>
+  </div>
+</header>
+{% endif %}
+
+<main class="main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>

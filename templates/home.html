@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}ホーム｜社内アンケートシステム{% endblock %}
+
+{% block content %}
+<h1 class="page-title">ホーム</h1>
+
+{% if session.role == 'admin' %}
+<!-- 管理者エリア -->
+<div class="card">
+  <div class="flex items-center justify-between mb-16">
+    <h2 class="card-title" style="border:none;margin:0;padding:0;">作成したアンケート</h2>
+    <a href="{{ url_for('survey_create') }}" class="btn btn-success">＋ 新しいアンケートを作成する</a>
+  </div>
+
+  {% if admin_surveys %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>アンケートタイトル</th>
+          <th>回答期限</th>
+          <th>状態</th>
+          <th>回答状況</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in admin_surveys %}
+        <tr class="clickable-row" onclick="location.href='{{ url_for('survey_results', survey_id=s.survey_id) }}'">
+          <td>{{ s.title }}</td>
+          <td>{{ s.deadline if s.deadline else '期限なし' }}</td>
+          <td>
+            {% if s.status == 'open' %}
+              <span class="badge badge-open">公開中</span>
+            {% else %}
+              <span class="badge badge-closed">締切</span>
+            {% endif %}
+          </td>
+          <td>{{ s.answered_count }} / {{ s.total_users }} 人</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted text-sm">まだアンケートを作成していません。</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- 回答可能なアンケート一覧 -->
+<div class="card">
+  <h2 class="card-title">回答可能なアンケート一覧</h2>
+
+  {% if survey_list %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>アンケートタイトル</th>
+          <th>回答期限</th>
+          <th>回答状況</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in survey_list %}
+        <tr class="clickable-row" onclick="location.href='{{ url_for('survey_answer', survey_id=s.survey_id) }}'">
+          <td>{{ s.title }}</td>
+          <td>{{ s.deadline if s.deadline else '期限なし' }}</td>
+          <td>
+            {% if s.answered %}
+              <span class="badge badge-answered">回答済み</span>
+            {% else %}
+              <span class="badge badge-pending">未回答</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted text-sm">現在公開中のアンケートはありません。</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}ユーザー管理｜社内アンケートシステム{% endblock %}
+
+{% block content %}
+<h1 class="page-title">ユーザー管理</h1>
+
+{% if new_user %}
+<div class="password-notice">
+  <strong>ユーザーを作成しました</strong>
+  <div>{{ new_user.display_name }}（{{ new_user.email }}）の初期パスワード：</div>
+  <span class="password-value">{{ new_user.password }}</span>
+  <div style="margin-top:8px;font-size:12px;">※ このパスワードを対象者に通知してください。再表示はできません。</div>
+</div>
+{% endif %}
+
+<!-- ユーザー追加フォーム -->
+<div class="card">
+  <h2 class="card-title">新規ユーザー追加</h2>
+  <form method="post" action="{{ url_for('user_create') }}" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label class="form-label">メールアドレス <span class="required-badge">必須</span></label>
+      <input name="email" type="email" class="form-control" placeholder="user@example.com">
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+      <label class="form-label">表示名（氏名） <span class="required-badge">必須</span></label>
+      <input name="display_name" type="text" class="form-control" placeholder="山田 太郎">
+    </div>
+    <div class="form-group" style="margin:0;min-width:140px;">
+      <label class="form-label">権限</label>
+      <select name="role" class="form-control">
+        <option value="general">一般ユーザー</option>
+        <option value="admin">管理者</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary" style="height:38px;white-space:nowrap;">追加する</button>
+  </form>
+  <p class="form-hint mt-12">パスワードは自動生成されます。作成後に表示されるパスワードを対象者に通知してください。</p>
+</div>
+
+<!-- ユーザー一覧 -->
+<div class="card">
+  <h2 class="card-title">登録ユーザー一覧</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>表示名</th>
+          <th>メールアドレス</th>
+          <th>権限</th>
+          <th>登録日時</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.display_name }}</td>
+          <td>{{ u.email }}</td>
+          <td>
+            {% if u.role == 'admin' %}
+              <span class="badge badge-admin">管理者</span>
+            {% else %}
+              <span class="badge badge-general">一般</span>
+            {% endif %}
+          </td>
+          <td class="text-sm text-muted">{{ u.created_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

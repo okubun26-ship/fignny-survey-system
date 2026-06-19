@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}集計結果：{{ survey.title }}｜社内アンケートシステム{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('home') }}" class="btn btn-outline btn-sm">← ホームに戻る</a>
+</div>
+
+<h1 class="page-title">集計結果：{{ survey.title }}</h1>
+
+{% if survey.deadline %}
+<p class="text-sm text-muted mb-16">回答期限：{{ survey.deadline }}</p>
+{% endif %}
+
+<!-- サマリー -->
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="summary-label">総対象人数</div>
+    <div class="summary-value">{{ total_users }}</div>
+    <div class="text-sm text-muted">人</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-label">回答済み人数</div>
+    <div class="summary-value">{{ answered_count }}</div>
+    <div class="text-sm text-muted">人</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-label">未回答人数</div>
+    <div class="summary-value" style="color:{% if total_users - answered_count > 0 %}#dc3545{% else %}#28a745{% endif %};">
+      {{ total_users - answered_count }}
+    </div>
+    <div class="text-sm text-muted">人</div>
+  </div>
+</div>
+
+<!-- 未回答者一覧 -->
+{% if unanswered %}
+<div class="card">
+  <h2 class="card-title">未回答者一覧</h2>
+  <div class="unanswered-list">
+    {% for u in unanswered %}
+    <span class="unanswered-chip">{{ u.display_name }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <p style="color:#28a745;font-weight:600;">✓ 全員が回答済みです</p>
+</div>
+{% endif %}
+
+<!-- 質問ごとの集計 -->
+{% for r in results %}
+<div class="card">
+  <div class="flex items-center gap-8 mb-16">
+    <span class="section-label">Q{{ loop.index }}</span>
+    <span style="font-weight:600;font-size:15px;">{{ r.q.question_text }}</span>
+    {% if r.q.is_required %}
+    <span class="required-badge">必須</span>
+    {% else %}
+    <span class="badge" style="background:#eee;color:#666;">任意</span>
+    {% endif %}
+    <span class="text-sm text-muted" style="margin-left:auto;">
+      {% if r.type == 'free_text' %}自由入力
+      {% elif r.type == 'dropdown' %}プルダウン
+      {% elif r.type == 'yes_no' %}Yes / No
+      {% endif %}
+    </span>
+  </div>
+
+  {% if r.type == 'free_text' %}
+    {% if r.rows %}
+      {% for row in r.rows %}
+      <div class="answer-item">
+        <div class="answer-name">{{ row.display_name }}</div>
+        <div>{{ row.answer_text if row.answer_text else '（未入力）' }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <p class="text-muted text-sm">まだ回答がありません</p>
+    {% endif %}
+
+  {% elif r.type == 'dropdown' %}
+  <div class="table-wrap">
+    <table style="width:auto;min-width:360px;">
+      <thead>
+        <tr>
+          <th>選択肢</th>
+          <th style="text-align:center;">回答数</th>
+          <th style="min-width:200px;">割合</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set total_ans = r.opts | sum(attribute='cnt') %}
+        {% for opt in r.opts %}
+        <tr>
+          <td>{{ opt.option_text }}</td>
+          <td style="text-align:center;font-weight:700;">{{ opt.cnt }}</td>
+          <td>
+            {% if total_ans > 0 %}
+            {% set pct = (opt.cnt / total_ans * 100) | round(1) %}
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;background:#e8edf2;border-radius:4px;height:14px;">
+                <div style="width:{{ pct }}%;background:#2c5f8a;height:100%;border-radius:4px;"></div>
+              </div>
+              <span style="font-size:13px;color:#555;width:44px;">{{ pct }}%</span>
+            </div>
+            {% else %}
+            <span class="text-muted text-sm">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% elif r.type == 'yes_no' %}
+  {% set total_yn = r.yes + r.no %}
+  <div class="table-wrap">
+    <table style="width:auto;min-width:360px;">
+      <thead>
+        <tr>
+          <th>回答</th>
+          <th style="text-align:center;">回答数</th>
+          <th style="min-width:200px;">割合</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for label, cnt in [('Yes', r.yes), ('No', r.no)] %}
+        <tr>
+          <td style="font-weight:600;">{{ label }}</td>
+          <td style="text-align:center;font-weight:700;">{{ cnt }}</td>
+          <td>
+            {% if total_yn > 0 %}
+            {% set pct = (cnt / total_yn * 100) | round(1) %}
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;background:#e8edf2;border-radius:4px;height:14px;">
+                <div style="width:{{ pct }}%;background:{% if label == 'Yes' %}#28a745{% else %}#dc3545{% endif %};height:100%;border-radius:4px;"></div>
+              </div>
+              <span style="font-size:13px;color:#555;width:44px;">{{ pct }}%</span>
+            </div>
+            {% else %}
+            <span class="text-muted text-sm">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

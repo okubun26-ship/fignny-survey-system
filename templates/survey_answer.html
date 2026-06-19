@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ survey.title }}｜社内アンケートシステム{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('home') }}" class="btn btn-outline btn-sm">← ホームに戻る</a>
+</div>
+
+<div class="card">
+  <h1 class="page-title" style="margin-bottom:8px;">{{ survey.title }}</h1>
+  {% if survey.description %}
+  <p style="color:#555;margin-bottom:12px;">{{ survey.description }}</p>
+  {% endif %}
+  {% if survey.deadline %}
+  <p class="text-sm text-muted">回答期限：{{ survey.deadline }}</p>
+  {% endif %}
+</div>
+
+{% if readonly %}
+<!-- 読み取り専用モード -->
+<div class="alert alert-success">このアンケートはすでに回答済みです。回答内容を表示しています。</div>
+
+{% for item in q_with_opts %}
+{% set q = item.q %}
+<div class="card">
+  <div class="flex items-center gap-8 mb-16">
+    <span class="section-label">Q{{ loop.index }}</span>
+    <span style="font-weight:600;">{{ q.question_text }}</span>
+    {% if q.is_required %}<span class="required-badge">必須</span>{% endif %}
+  </div>
+
+  {% for d in details %}
+  {% if d.question_id == q.question_id %}
+    {% if q.question_type == 'free_text' %}
+    <div class="answer-item">{{ d.answer_text if d.answer_text else '（未回答）' }}</div>
+    {% elif q.question_type == 'dropdown' %}
+    <div class="answer-item">{{ d.option_text if d.option_text else '（未選択）' }}</div>
+    {% elif q.question_type == 'yes_no' %}
+    <div class="answer-item">
+      {% if d.yes_no_value == 1 %}Yes{% elif d.yes_no_value == 0 %}No{% else %}（未回答）{% endif %}
+    </div>
+    {% endif %}
+  {% endif %}
+  {% endfor %}
+</div>
+{% endfor %}
+
+{% else %}
+<!-- 回答フォーム -->
+{% if errors %}
+<div class="error-list">
+  <strong>入力エラーがあります</strong>
+  <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post">
+  {% for item in q_with_opts %}
+  {% set q = item.q %}
+  <div class="card">
+    <div class="flex items-center gap-8 mb-16">
+      <span class="section-label">Q{{ loop.index }}</span>
+      <span style="font-weight:600;">{{ q.question_text }}</span>
+      {% if q.is_required %}
+        <span class="required-badge">必須</span>
+      {% else %}
+        <span class="badge" style="background:#eee;color:#666;">任意</span>
+      {% endif %}
+    </div>
+
+    {% if q.question_type == 'free_text' %}
+    <textarea name="answer_{{ q.question_id }}" class="form-control"
+              placeholder="回答を入力してください" rows="3"></textarea>
+
+    {% elif q.question_type == 'dropdown' %}
+    <select name="answer_{{ q.question_id }}" class="form-control" style="width:320px;">
+      <option value="">-- 選択してください --</option>
+      {% for opt in item.options %}
+      <option value="{{ opt.option_id }}">{{ opt.option_text }}</option>
+      {% endfor %}
+    </select>
+
+    {% elif q.question_type == 'yes_no' %}
+    <div class="radio-group">
+      <label class="radio-label">
+        <input type="radio" name="answer_{{ q.question_id }}" value="yes">
+        Yes
+      </label>
+      <label class="radio-label">
+        <input type="radio" name="answer_{{ q.question_id }}" value="no">
+        No
+      </label>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <div class="flex gap-12">
+    <button type="submit" class="btn btn-primary" style="padding:10px 32px;font-size:15px;">
+      送信する
+    </button>
+    <a href="{{ url_for('home') }}" class="btn btn-secondary">キャンセル</a>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
